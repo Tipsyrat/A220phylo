@@ -1,0 +1,444 @@
+---
+title: "A220 Establishing Evolutionary Relationships"
+output:
+  html_notebook:
+    
+---
+
+# Introduction
+
+In lesson 1, we learned how the need to identify specific species accurately has led to the classification of organisms according to their evolutionary relationships. </br>
+
+First and foremost, organisms are arranged into ranks based on trait similarities (homologies) that reflect evolutionary relationships. Subsequently, this led another group of scientists, known as systematics to hypothesise evolutionary relationships based on patterns of similarities. We learned that systematists use phylogenetic trees or graphically represent hypothesised evolutionary relationships. </br>
+
+---
+
+In this self-paced and self-directed exercise, you will: </br>
+
+#### Part 1: Understanding phylogeny </br>
+  - revisit the components of a phylogenetic tree
+  - examine the different methods of representing phylogeny
+  - learn how to interpret the evolutionary relationship on a phylogenetic tree
+  - find out how phylogeny are constructured
+
+
+#### Part 2: Phylogeny from morphological data </br>
+  - explore how morphological traits are quantified
+  - follow through steps in constructing phylogeney using morphological data </br>
+
+#### Part 3: Phylogeny from molecular data </br>
+  - explore how genetic traits are quantified
+  - follow through steps in constructing phylogeny using morphological data
+
+#### Part 4: Comparing phylogenies from morphological and molecular data
+  - compare the similarities and differences between the phylogenies
+  - reflect on the causes of differences and how phylogeny can be better constructed
+
+
+  ---
+``` {r include=FALSE}
+library(ape)
+library(phangorn)
+```
+
+# 1: Understanding Phylogeny
+
+### **Introduction**
+
+In this lesson, we will revisit the components of a phylogenetic tree, examine different methods of representing phylogeny, learn how to interpret evolutionary relationships on a phylogenetic tree, and understand how a phylogenetic tree can be constructed.
+
+---
+
+## 1.1: Components of a Phylogenetic Tree
+
+Let's begin by visualising a randomly generated phylogenetic tree.
+```{r echo=FALSE, fig.height=4.5, fig.width=4.5,}
+# set seed to ensure the same tree is produced
+set.seed(0210)
+# generate a tree
+tree <- rtree(n = 7, tip.label = c(LETTERS[1:7]))
+branch_colours <- rep("black", nrow(tree$edge))
+
+tree <- root(tree, outgroup = "D", resolve.root = TRUE)
+
+
+branch_colours[tree$edge[, 2] == which(tree$tip.label == "G")] <- "red"
+branch_colours[tree$edge[, 2] == which(tree$tip.label == "B")] <- "blue"
+plot(tree, use.edge.length = FALSE,edge.color = branch_colours,edge.width = 2)
+nodelabels(text=c(1:6))
+
+
+
+```
+<div style="text-align: center;"> Fig 1. A randomly generated phylogeny</div>
+</br>
+The randomly generated tree consists of several key components that reflect evolutionary relationships.
+
+Firstly, at the **TIPS** of the tree, labeled with the letters A to G, are the **TERMINAL NODES**, which represent the existing species or taxa being analysed. These are the points where the tree branches terminate, symbolising the most recent members in the lineage.
+
+The tree also includes **BRANCHES**, or edges, which are the lines connecting the nodes to the tips and other nodes. These branches represent the evolutionary pathways that link different species or taxa, showing how they have diverged from common ancestors over time. For instance, the <font color="red"> **RED** </font> branch signifies the unique evolutionary pathway for taxa G after a speciation event at internal node 5. Likewise, the <font color="BLUE"> **BLUE** </font> branch signifies the unique evolutionary pathway for taxa B after speciation at node 5.
+
+An **OUTGROUP**, represented by taxon 'D', is included to root the tree and provide a reference point for understanding the evolutionary relationships among the ingroup species. The outgroup helps to establish the direction of evolution and context for the ingroup taxa, which are A, B, C, E, F, and G.
+
+Within the tree, there are several **INTERNAL NODES**, labeled with the numbers 2 to 6. These internal nodes represent hypothetical common ancestors from which the descendant species or taxa have evolved. Each internal node is a point where a branch splits, indicating a divergence event in evolutionary history.
+
+The tree has a **ROOT**, which is labeled as node 1, representing the last common ancestor of all the species depicted in the tree. The root is the starting point from which the entire tree grows.
+
+Together, the tips, branches, nodes, and root of the tree form **MONOPHYLETIC CLADES**, which are groups of organisms that include a common ancestor and all its descendants. For instance, taxa G and B with root after internal node 5.  So does, taxa A, C and F with root after internal node 2. By tracing from any internal node to its descendant tips, one can identify clades within the tree. The tree generated by this code is unscaled, meaning the branch lengths do not represent time or the amount of evolutionary change, focusing instead on the topology, or the branching pattern, of the evolutionary relationships.
+
+---
+
+## 1.2: Different representation of phylogeny
+
+Evolutionary relationships among species can be represented in various ways, each providing different insights into the data. Understanding these representations is crucial for interpreting and conveying evolutionary history effectively.
+
+There are three main types of phylogenetic trees (there are many more variations which we will not cover here). These are 1) the cladogram,  2) the phylogram, and 3) the chronogram.
+
+#### **Cladogram**
+
+A cladogram is a type of phylogenetic tree that primarily shows the branching order (topology) of the evolutionary relationships among species or taxa. Cladograms are focused on illustrating the relative relationships among taxa, without any indication of the amount of evolutionary change or the timing of divergences.
+
+**Key Characteristics of Cladograms:**
+
+- **Branch Lengths**: Uniform and not proportional to evolutionary change or time.
+- **Information Conveyed**: Shows only the pattern of branching (who is related to whom).
+- **Usage**: Used when the primary focus is on the relative relationships among taxa rather than the extent or timing of their divergence.
+
+```{r echo=FALSE, fig.height= 4.5, fig.width=4.5}
+# Plot the tree as a cladogram
+plot(tree, type = "cladogram", edge.color = branch_colours, use.edge.length = FALSE, edge.width = 2)
+nodelabels(text = c(1:6))
+```
+<div style="text-align: center;"> Fig 2. A cladogram showing the same relationship above</div>
+</br>
+
+#### **Phylograms**
+
+A phylogram is another type of phylogenetic tree that displays both the branching order and the amount of evolutionary change. In a phylogram, the branch lengths are proportional to the amount of change, such as genetic mutations or morphological differences, that have occurred along each branch.
+
+**Key Characteristics of Phylograms:**
+
+- **Branch Lengths:** Proportional to the amount of evolutionary change.
+- **Information Conveyed:** Shows both the pattern of branching and the degree of divergence among taxa.
+- **Usage:** Used when it’s important to understand not just the relationships among taxa but also the magnitude of their evolutionary divergence.
+
+```{r echo=FALSE, fig.height=4.5, fig.width=4.5}
+# Plot the tree as a phylogram
+plot(tree, type = "phylogram", edge.color = branch_colours, edge.width = 2)
+nodelabels(text = c(1:6))
+
+```
+<div style="text-align: center;"> Fig 3. A phylogram showing the same relationship above</div>
+</br>
+
+#### **Chronograms**
+
+A chronogram is a type of phylogenetic tree in which branch lengths are scaled to represent actual time, often calibrated with fossil data or molecular clocks. Chronograms are useful for illustrating the timing of evolutionary events and understanding the temporal dynamics of diversification.
+
+**Key Characteristics of Chronograms:**
+
+- **Branch Lengths:** Scaled to actual time, often in millions of years.
+- **Information Conveyed:** Shows both the pattern of branching and the timing of divergence events.
+- **Usage:** Used to understand the temporal aspects of evolution and to compare the timing of different lineages' divergences.
+Creating a chronogram usually requires additional data for calibration, such as fossil records or molecular clock estimates. Here is an example of plotting a chronogram assuming we have time-calibrated data.
+
+``` {r, echo=FALSE,  fig.height=4.5, fig.width=4.5}
+# Note: This is a placeholder example as generating a true chronogram requires specific calibration data
+tree$edge.length <- runif(nrow(tree$edge), min = 0.1, max = 1)  # Random branch lengths to mimic time
+
+# Plot the simulated chronogram
+plot(tree, type = "phylogram", edge.color = branch_colours, edge.width = 2,)
+
+# Add a scale bar
+ape::axisPhylo()
+
+# Add node labels for clarity
+nodelabels(text = c(1:6))
+
+
+```
+<div style="text-align: center;"> Fig 4. A simulated chronogram showing the same relationship above</div>
+</br>
+
+---
+
+## 1.3: Other common representations of phylogeny
+
+Besides the various representations of a phylogenic relationship, phylogenetic trees can either be rooted or unrooted.
+
+#### **Rooted tree** 
+
+A rooted phylogenetic tree, such as those represented in Figs 1-4 above, include a root node that represents the most recent common ancestor of all the taxa in the tree. This root provides a starting point, giving the tree a clear direction from ancestor to descendants, allowing researchers to trace the evolutionary history and infer the order of divergence events.
+
+#### **Unrooted tree**
+
+An unrooted phylogenetic tree, in contrast, do not have a designated root. They simply depict the relationships among taxa without specifying a common ancestor or the direction of evolution. Unrooted trees focus on the connections between taxa, providing insights into how species are related without making assumptions about the temporal sequence of their evolution.
+
+```{r echo=FALSE, fig.height= 4.5, fig.width=4.5}
+# Plot the tree as a cladogram
+plot(tree, type = "unrooted", edge.color = branch_colours, use.edge.length = FALSE, edge.width = 2)
+nodelabels(text = c(1:6))
+```
+<div style="text-align: center;"> Fig 5. An unrooted showing the same relationship above</div>
+</br>
+
+#### **Radial Tree**
+
+Another means of representing phylogeny is by a radial (or circular) tree. It arranges the taxa around a central point, with branches radiating outwards like spokes on a wheel. This format is often used for aesthetic reasons or to emphasise the equal standing of all taxa, rather than suggesting a hierarchy. 
+
+Characteristically, in a radial tree, all branches radiate from a central point. Not only is this visually appealing, such method can accommodate large datasets.
+
+```{r echo=FALSE, fig.height= 4.5, fig.width=4.5}
+# Plot the tree as a cladogram
+plot(tree, type = "fan", edge.color = branch_colours, use.edge.length = FALSE, edge.width = 2)
+nodelabels(text = c(1:6))
+```
+<div style="text-align: center;"> Fig 6. A radial tree showing the same relationship above</div>
+</br>
+
+---
+
+## 1.4 Interpreting Evolutionary Relationships
+
+#### **Topology**
+
+To interpret evolutionary relationships of a phylogeny, understanding its **TOPOLOGY** (i.e., the arrangement of the branches and nodes that connect the tips representing species or taxa) is crucial. The topology of a tree illustrates the order in which lineages diverge from common ancestors and the hierarchical relationships among those lineages. Importantly, it is the topology of a tree that carries the information about evolutionary relationships—specifically, which groups are more closely related to each other.
+
+Consider the two phylogenies:
+
+```{r echo=FALSE, fig.height=3.5, fig.width=6.5}
+set.seed(123)
+
+# Generate a simple phylogenetic tree with species A, B, and C
+tree1 <- read.tree(text = "((A,B),C);")
+tree2 <- read.tree(text = "((B,A),C);")
+
+# Plot the first tree
+par(mfrow = c(1, 2))  # Set up the plotting area to show two plots side by side
+plot(tree1, main = "a",edge.width = 2)
+nodelabels(text = c(1:2))
+
+# Plot the second tree with A and B swapped
+plot(tree2, main = "b",edge.width = 2)
+nodelabels(text = c(1:2))
+
+
+```
+<div style="text-align: center;"> Fig 7. Both phylogenies a and b showed the same evolutionary relationships between taxa A to C. the specific positions of the taxa A to C is not as important as the branching pattern. </div>
+</br>
+
+Both phylogenies, Figs 7a and 7b, showed the same evolutionary relationships: i.e., taxa A and B share a more recent common ancestor, whereas taxon C diverged earlier.  As illustrated, the specific positions of the species (e.g., whether A is on the bottom and B is on the top as in Fig 7a or A is on the top and B on the bottom as in Fig 7b ) are not as important as the branching pattern that connects them. In other words, the rotation around the node, changing the position of the taxa, is not as important as to the connection of the node to the corresponding taxa.
+
+As mentioned above, the nodes represent the common ancestors, and the branches represent the evolutionary pathways connecting these ancestors to their descendants. Subsequently, the order in which the branches split off indicate the sequence of evolutionary events. Thus, tips (taxa) that share a node are considered more closely related to each other than to taxa connected by a more distant node. For example, in both instance of Figs 7a and 7b,  Taxon A share a node with taxon B, but a more distant node than taxon C. Therefore, taxon A is more closely related to taxon B than to C in both phylogenies, regardless of the specific locations.
+
+```{r echo=FALSE,fig.height=4.5, fig.width=4.5}
+# Generate a simple phylogenetic tree
+set.seed(123)
+tree <- rtree(4, tip.label = c("A", "B", "C", "D"))
+
+# Plot the tree
+plot(tree, use.edge.length = FALSE,edge.width = 2)
+
+# Add node labels to understand topology
+nodelabels(text = 1:3)
+
+```
+<div style="text-align: center;"> Fig 8. Phylogenetic tree showing evolutionary relationship of four taxa A to D </div>
+</br>
+
+Consider the phylogeny, Fig 8, above. This tree illustrates the evolutionary history of four taxa, A to D. A and B are the most closely related within this group as they share the most recent common ancestor. A and B are also known as **SISTER TAXA**. In this phylogeny, taxa A, B and C form a clade, sharing a more recent common ancestor with each other than any of them with D. Therefore, C is more closely related to A and B compared to any of them with D.
+
+From the topology of phylogenetic trees, three primary types of evolutionary relationships can be discerned. These are **MONOPHYLETIC**, **POLYPHYLETIC** and **PARAPHYLETIC** relationships.
+
+#### **Monophyletic grouping**
+
+A monophyletic group, or clade, consists of a common ancestor and all of its descendants. Monophyletic groups accurately reflect the evolutionary history of a lineage, as they represent a complete branch of the tree of life. Identifying clades within a phylogenetic tree is fundamental to understanding the evolutionary relationships between species.
+
+```{r echo=FALSE, fig.height= 4.5, fig.width=4.5}
+# set seed to ensure the same tree is produced
+set.seed(0210)
+# generate a tree
+tree <- rtree(n = 7, tip.label = c(LETTERS[1:7]))
+tree <- root(tree, outgroup = "D", resolve.root = TRUE)
+
+branch_colours <- rep("black", nrow(tree$edge))
+monoA <- c("B", "G", "E")
+monoB <- c("A", "C", "F")
+# Function to find all edges (branches) within a clade, including internal branches
+get_clade_edges <- function(tree, clade_tips) {
+  clade_edges <- which(tree$edge[, 2] %in% c(
+    which(tree$tip.label %in% clade_tips),
+    tree$edge[tree$edge[, 2] %in% which(tree$tip.label %in% clade_tips), 1]
+  ))
+  return(clade_edges)
+}
+
+# Get edges for the first clade and colour them green
+cladeA_edges <- get_clade_edges(tree, monoA)
+branch_colours[cladeA_edges[-1]] <- "green"
+
+# Get edges for the second clade and colour them orange
+cladeB_edges <- get_clade_edges(tree, monoB)
+branch_colours[cladeB_edges[-1]] <- "orange"
+
+# Plot the tree with coloured branches
+plot(tree, use.edge.length = FALSE, edge.color = branch_colours, edge.width = 2)
+nodelabels(text = c(1:6))
+
+```
+
+
+<div style="text-align: center;"> Fig 9. Phylogenetic tree showing two monophyletic groupings: denoted by branches in <font color="green"> **GREEN** </font> and <font color="orange"> **ORANGE** </font> </div>
+</br>
+
+#### **Paraphyletic grouping**
+
+A paraphyletic group includes a common ancestor and some, but not all, of its descendants. This type of grouping reflects an incomplete lineage, as it excludes one or more descendants that would make the group monophyletic.
+
+```{r echo=FALSE, fig.height= 4.5, fig.width=4.5}
+# set seed to ensure the same tree is produced
+set.seed(0210)
+# generate a tree
+tree <- rtree(n = 7, tip.label = c(LETTERS[1:7]))
+tree <- root(tree, outgroup = "D", resolve.root = TRUE)
+
+branch_colours <- rep("black", nrow(tree$edge))
+paraA <- c("B", "G", "E","A", "C", "F")
+# Function to find all edges (branches) within a clade, including internal branches
+get_clade_edges <- function(tree, clade_tips) {
+  clade_edges <- which(tree$edge[, 2] %in% c(
+    which(tree$tip.label %in% clade_tips),
+    tree$edge[tree$edge[, 2] %in% which(tree$tip.label %in% clade_tips), 1]
+  ))
+  return(clade_edges)
+}
+
+# Get edges for the first clade and colour them green
+cladeA_edges <- get_clade_edges(tree, paraA)
+branch_colours[head(cladeA_edges,-1)] <- "blue"
+
+# Plot the tree with coloured branches
+plot(tree, use.edge.length = FALSE, edge.color = branch_colours, edge.width = 2)
+nodelabels(text = c(1:6))
+
+```
+
+<div style="text-align: center;"> Fig 10. Phylogenetic tree showing a paraphyletic grouping: denoted by branches in <font color="blue"> **BLUE** </font>
+</br>
+
+#### **Polyphyletic grouping**
+
+A polyphyletic group consists of species that do not share an immediate common ancestor within the group, meaning the group is formed based on convergent traits rather than shared ancestry. This grouping does not accurately represent evolutionary relationships because it combines species from different lineages.
+
+
+```{r echo=FALSE, fig.height= 4.5, fig.width=4.5}
+# set seed to ensure the same tree is produced
+set.seed(0210)
+# generate a tree
+tree <- rtree(n = 7, tip.label = c(LETTERS[1:7]))
+tree <- root(tree, outgroup = "D", resolve.root = TRUE)
+
+branch_colours <- rep("black", nrow(tree$edge))
+poly <- c("A", "B")
+branch_colours[tree$edge[, 2] %in% which(tree$tip.label %in% poly)] <- "red"
+
+# Plot the tree with coloured branches
+plot(tree, use.edge.length = FALSE, edge.color = branch_colours, edge.width = 2)
+nodelabels(text = c(1:6))
+
+```
+
+<div style="text-align: center;"> Fig 11. Phylogenetic tree showing a polyphyletic grouping: denoted by branches in <font color="red"> **RED** </font>
+</br>
+
+---
+
+## 1.5 Constructing phylogeny
+
+In this section, we will examine an overview on the type of data phylogenies are based on, how to collect them and use them to construct a phylogenetic tree.
+
+#### **Types of Data**
+
+The construction of a phylogenetic tree can be based on various types of data, with molecular and phenotypic data being the two primary sources.
+
+#### **Molecular Data**
+
+Molecular data is derived from the genetic material of organisms. Various types of molecular data can be used, including 1) specific genes and 2) whole genome sequences. This data provides information about the genetic similarities and differences between species, which can be used to infer evolutionary relationships.
+
+##### **Common genes used in phylogenetic reconstruction**
+Certain genes are frequently used by scientists to reconstruct phylogenies due to their conserved nature across different species. These genes provide reliable markers for understanding evolutionary relationships. Some commonly used genes include:
+
+- **Ribosomal RNA Genes (rRNA)** </br>
+The ribosomal RNA genes are part of the ribosome, the molecular machine that synthesizes proteins. The 16S rRNA gene (in bacteria) and the 18S rRNA gene (in eukaryotes) are highly conserved and are used extensively for constructing phylogenetic trees. Their conserved regions allow for comparisons across a wide range of organisms.
+
+- **Mitochondrial Genes** </br>
+In animals, mitochondrial DNA is often used for phylogenetic studies. Genes such as cytochrome c oxidase subunit I (COI) and cytochrome b (cytb) are commonly used. Mitochondrial genes evolve relatively quickly, providing useful information for understanding relationships at different evolutionary timescales.
+
+- **Nuclear Genes** </br> 
+Specific nuclear genes, such as the nuclear ribosomal protein genes (e.g., ITS1, ITS2), can also be used. These genes may provide additional resolution, particularly in cases where mitochondrial genes are not sufficient.
+
+- **Protein-Coding Genes** </br>
+Genes encoding proteins such as the beta-actin and histone genes are used for phylogenetic analysis because they are present in all eukaryotes and their protein products are essential for cellular functions. These genes often have conserved and variable regions useful for distinguishing between species.
+
+##### **Whole Genome Sequencing**
+Whole Genome Sequencing (WGS) involves sequencing the entire DNA of an organism, providing comprehensive genetic information. This approach offers several advantages:
+
+- **Comprehensive Data** </br>
+WGS captures all genetic variations across the entire genome, including coding regions (exons), non-coding regions (introns), and regulatory sequences. This broad dataset allows for a more detailed and accurate reconstruction of evolutionary relationships.
+
+- **High Resolution** </br>
+By using whole genome data, researchers can identify more genetic markers and evolutionary changes, leading to a higher resolution of phylogenetic trees. This is particularly useful for resolving complex relationships between closely related species.
+
+- **Flexibility** </br>
+WGS data can be used to study various aspects of evolution, including gene gain and loss, genome rearrangements, and evolutionary adaptations. This provides a more holistic view of the evolutionary process.
+
+- **Improved Accuracy**</br>
+The extensive data from WGS reduces the likelihood of errors and biases that may arise from using a limited number of genes or markers. This enhances the accuracy of the phylogenetic reconstruction.
+
+
+
+##### **Collection** </br>
+- **Specific Genes**</br>
+Molecular data for specific genes is collected using targeted sequencing techniques. For instance, PCR (Polymerase Chain Reaction) can amplify specific gene regions, which are then sequenced using methods such as Sanger sequencing or next-generation sequencing (NGS). The sequences for these genes are aligned to identify similarities and differences among species.
+
+- **Whole Genome Sequencing** </br>
+WGS involves sequencing the entire DNA of an organism, providing a broad dataset that includes all genetic information. Techniques such as Illumina sequencing or Oxford Nanopore sequencing are used to generate large volumes of data, which is then processed to obtain comprehensive genetic profiles.
+
+##### **Analysis** </br>
+- **Specific Genes**</br>
+Specific Genes
+After sequencing, data for specific genes is processed to identify genetic markers. Tools like BLAST (Basic Local Alignment Search Tool) are used to compare sequences and align them across species. Alignment software helps ensure accurate comparison and identification of conserved and variable regions. </br> Phylogenetic trees are then constructed using methods such as maximum likelihood, Bayesian inference, or distance-based approaches. Software tools like PhyML, RAxML, and MrBayes are commonly used for this purpose.
+
+- **Whole Genome Sequencing** </br> 
+For WGS data, various bioinformatics tools are used to process and analyze the entire genome. This includes assembling the genome, identifying genetic variations, and aligning sequences to create a comprehensive view of evolutionary relationships. Software such as GATK (Genome Analysis Toolkit) and tools for phylogenetic analysis like BEAST, IQ-TREE, and PhyML are employed to construct phylogenetic trees based on the extensive genetic data obtained.
+
+#### **Phenotypic Data**
+
+Phenotypic data encompasses a broad range of observable traits, including both physical and behavioural characteristics of organisms. This data provides insights into the evolutionary relationships between species based on their observable features.
+
+##### **Collection**
+
+- **Physical Traits** </br>
+Phenotypic data starts with the selection and measurement of physical traits, such as body size, bone structure, leaf shape, and flower morphology. Measurements are taken directly from specimens in the field or from museum collections.
+
+- **Behavioural Traits** </br>
+Behavioural traits refer to observable actions or patterns exhibited by organisms, such as mating rituals, foraging behaviour, and social interactions. These traits are recorded through field observations and controlled experiments.
+
+##### **Analysis**
+
+- **Trait Coding** </br>
+Physical and behavioural traits are coded into discrete categories or states, which are then organized into a character matrix for analysis. This matrix allows for the comparison of traits across species.
+
+- **Matrix Construction** </br>
+A character matrix is created where rows represent different species or taxa, and columns represent the traits. Each cell contains the state of a particular trait for a particular species.
+
+##### **Analysis** </br>
+Phylogenetic trees are constructed based on the character matrix using methods such as parsimony or distance-based approaches. Software like PAUP*, TNT, and MEGA can be used to perform these analyses, providing insights into the evolutionary relationships based on phenotypic traits.
+
+---
+
+2. Phylogeny from morphological data
+
+Having understood how phylogeny represents evolutionary relationships and how they might be constructed using data. In this segment, we will explore how phenotypic traits (mainly morphological) are quantified and used in reconstructing a phylogenetic tree.
+
+The data 
