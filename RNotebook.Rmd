@@ -1,7 +1,6 @@
 ---
 title: "A220 Establishing Evolutionary Relationships"
-output:
-  html_notebook:
+output: html_notebook
     
 ---
 
@@ -427,7 +426,7 @@ Behavioural traits refer to observable actions or patterns exhibited by organism
 ##### **Analysis**
 
 - **Trait Coding** </br>
-Physical and behavioural traits are coded into discrete categories or states, which are then organized into a character matrix for analysis. This matrix allows for the comparison of traits across species.
+Physical and behavioural traits are coded into discrete categories or states, which are then organised into a character matrix for analysis. The importance of organising these traits into discrete states is to capture the variation in phenotype of the species in question. This matrix allows for the comparison of traits across species.
 
 - **Matrix Construction** </br>
 A character matrix is created where rows represent different species or taxa, and columns represent the traits. Each cell contains the state of a particular trait for a particular species.
@@ -437,8 +436,128 @@ Phylogenetic trees are constructed based on the character matrix using methods s
 
 ---
 
-2. Phylogeny from morphological data
+# 2: Constructing phylogeny from phenotypic (morphological) data
 
-Having understood how phylogeny represents evolutionary relationships and how they might be constructed using data. In this segment, we will explore how phenotypic traits (mainly morphological) are quantified and used in reconstructing a phylogenetic tree.
+In this segment, we will explore how phenotypic traits, specifically morphological ones, are quantified and used to reconstruct phylogenetic trees. Building on our understanding of how phylogenies represent evolutionary relationships, we will focus on methods for constructing phylogenies using phenotypic data.
 
-The data 
+The data used in this example is derived from the features of the (1.) cranium, (2.) dentition, and (3.) vertebral column and appendages of primates, comprising of Tarsius, Gibbons, and four extant genera of hominids, as described by [Shoshani _et al_.](https://github.com/Tipsyrat/A220phylo/blob/2b516cd794cb77d8430a18786c7ddcb08ba62e9b/shoshani1996.pdf) (1996). Note that this dataset excludes soft features and focuses solely on skeletal traits. (i.e., traits/characters 1-27, 45-51, 58-89, 159-179)
+
+Let's examine the first 21 traits of the data:
+``` {r echo=FALSE}
+pMor <- read.csv("C:/Users/paul_z_chen/Desktop/A220phylo/A220phylo/primateMorpho.csv")
+pMor <- as.data.frame(pMor)
+mor <- as.matrix(pMor[,-1])
+row.names(mor)<-as.vector(pMor[,1])
+(mor[,1:21])
+
+```
+Examine appendix 2, traits 1-264 of the manuscript (see appendix 3 for the corresponding coded matrix). What do the above codes represent? As mentioned earlier in segment 1.5, phenotypic traits are often categorised into discrete states. Such categories can suffer from subjectivity and loss of information, especially if the traits consists of continuous characteristics. The selection of traits can also be contentious, since only homologous traits should be considered.
+
+Refer to Appendix 2 of the manuscript for traits 1-264, and Appendix 3 for the corresponding coded matrix. These traits are categorised into discrete states for analysis. 
+For instance, the first trait, C1, represents the presence of the rostrum or muzzle. Character states: (0) long, with an index ( calculated as the length of the facial region of cranium anterior to the plane drawn through anterior margin of orbits, to tip of the premaxillae, see red line in Fig 12) of 33–51; (1) short, with an index of 10–30. 
+
+
+```{r, echo=FALSE,fig.align='center'}
+knitr::include_graphics("C:/Users/paul_z_chen/Desktop/A220phylo/A220phylo/pri_skull.jpg")
+```
+<div style="text-align: center;"> Fig 12. Comparison of skull morphology between a typical prosimian and a typical simian <div>
+</br> 
+
+<div style="text-align: left;">
+As discussed in segment 1.5, phenotypic traits are often categorised into discrete states, which can introduce subjectivity and potentially result in a loss of information, especially when dealing with continuous traits. For instance, why should a species with a rostrum index of 30 be classified as having a short rostrum, while another with an index of 33 is considered to have a long one? Additionally, for any trait to be valid in phylogenetic analysis, it must represent homology—traits inherited from a common ancestor. Determining whether traits are homologous can be challenging and is not always straightforward.
+
+Furthermore, phenotypic traits are prone to convergence, where similar traits evolve independently in species with different evolutionary backgrounds. A classic example is the evolution of opposable digits. Although koalas are marsupials, they have developed opposable digits similar to those of primates, driven by the shared need for a strong grip in an arboreal environment. This selective pressure has led to the independent evolution of these traits in both groups (see Fig 13).
+
+```{r, echo=FALSE,fig.align='center'}
+knitr::include_graphics("C:/Users/paul_z_chen/Desktop/A220phylo/A220phylo/convergence.jpg")
+```
+<div style="text-align: center;"> Fig 13. Opposable digits of a Lemur (left) and a Koala (right) <div>
+</br> 
+<div style="text-align: left;">
+To demonstrate the challenges posed by phenotypic convergence in phylogenetic analysis, we will construct a phylogeny of these primates using the identified phenotypic traits. Convergence occurs when different species independently evolve similar traits, often due to similar selective pressures, rather than shared ancestry. This can lead to misinterpretations in phylogenetic trees, suggesting a closer evolutionary relationship between species than actually exists.
+
+In this analysis, we use morphological data from the cranium, dentition, and vertebral structures of Tarsius, Gibbons, and four extant genera of hominids. By focusing on skeletal traits, we aim to minimise the influence of non-heritable factors. However, even these traits can be subject to convergence. For instance, similar dietary needs or locomotor habits may lead to comparable skull or dental structures in unrelated species, potentially confounding the phylogenetic analysis.
+
+We begin by organising the morphological data into a matrix format, assigning species names to ensure each set of traits is correctly linked to its species. We then select specific traits that vary among the species and could indicate evolutionary relationships, categorising them into discrete states for analysis. Using computational methods, we explore different phylogenetic trees to identify the most likely evolutionary relationships based on these traits.
+
+Based on these traits, this is what the resulting consensus tree looks like:
+
+```{r, echo=FALSE,fig.align='center'}
+pMor <- read.csv("C:/Users/paul_z_chen/Desktop/A220phylo/A220phylo/primateMorpho.csv")
+pMor <- as.data.frame(pMor)
+mor <- as.matrix(pMor[,-1])
+row.names(mor)<-as.vector(pMor[,1])
+cMor <- phyDat(as.matrix(cbind(mor[,1:27],mor[,45:51],mor[,58:89],mor[,159:179])), type = "USER", levels =c(0,1,2,3,4,5,7,NA))
+cMor_bab <- bab(cMor,trace=0)
+cMor_bab_cons <- root(consensus(cMor_bab), outgroup = "Tarsius",
+                    resolve.root = TRUE, edgelabel = TRUE)
+plot(cMor_bab_cons,edge.width = 2)
+```
+<div style="text-align: center;"> Fig 14. A phylogenetic tree of Hominoidea constructed using phenotypic traits from the cranium, dentition, and vertebral structures, with Tarisus as the outgroup, showed polytomy among hominids and Gibbons <div>
+</br> 
+<div style="text-align: left;">
+Polytomy in a phylogenetic tree occurs when a single ancestral lineage splits into three or more descendant lineages, creating a node with multiple branches. This is in contrast to a bifurcating tree, where each node splits into exactly two branches. Polytomies indicate uncertainty or ambiguity in the exact evolutionary relationships among the descendant lineages. This can happen for a variety of reasons, such as rapid speciation events, lack of sufficient data to resolve relationships, or, importantly in our case, due to convergence.
+
+In the context of our phylogeny, morphological traits that evolved under similar environmental or functional constraints may appear more similar than they actually are in terms of evolutionary history. This can result in polytomies, as the morphological data does not provide enough resolution to distinguish between the closely related lineages.
+
+In our phylogenetic analysis of the Hominoidea, we observe polytomy among hominids and gibbons. This suggests that the phenotypic traits we used—those from the cranium, dentition, and vertebral structures—may have been influenced by convergent evolution. For example, similar dietary habits or environmental adaptations could have led to comparable skull or dental structures in both hominids and gibbons, despite their distinct evolutionary paths. As a result, the phylogenetic tree cannot definitively resolve the relationships among these groups, reflecting a polytomy.
+
+This demonstrates the challenges of using phenotypic data alone for phylogenetic reconstruction. While these traits provide valuable insights into the evolutionary history, convergence can obscure the true relationships. Therefore, it's often beneficial to combine morphological data with other types of data, such as genetic information, to achieve a clearer and more accurate phylogenetic understanding. By recognising and addressing the limitations of phenotypic data, we can better interpret the evolutionary relationships among species.
+
+---
+<div style="text-align: left;">
+# 3: Constructing phylogeny from phenotypic (morphological) data
+
+In this segment, we will explore how molecular data can be used to reconstruct phylogenetic trees. Building on our understanding of how phylogenies represent evolutionary relationships, we will now focus on methods for constructing phylogenies using genetic information.
+
+The molecular data used in this example is derived from the mitochondrial DNA sequences of NADH dehydrogenase subunit 4 and subunit 5 (ND4 and ND5) genes (see [Hayasaka _et al_. 1998](https://github.com/Tipsyrat/A220phylo/blob/2c3a66a43fe6ad575f3e6045434e41a1263c6aa9/2haya.pdf); Fig 15). These genes are important because they encode components of NADH dehydrogenase, a critical enzyme in the mitochondrial electron transport chain, which is essential for cellular energy production. The species included in this analysis are as before, Tarsius, Gibbons, and four extant genera of hominids.
+
+NADH dehydrogenase plays a key role in transferring electrons from NADH to ubiquinone in the electron transport chain, helping to generate a proton gradient across the mitochondrial membrane. This proton gradient is crucial for the production of ATP, the primary energy currency of the cell. The ND4 and ND5 genes, which code for subunits of this enzyme, are highly conserved yet also exhibit enough variation to be useful for studying evolutionary relationships.
+
+Mitochondrial DNA, including genes like ND4 and ND5, is often used in phylogenetic studies because it has a higher rate of nucleotide substitution than nuclear DNA ([Brown _et al_. 1979](https://www.pnas.org/doi/10.1073/pnas.76.4.1967?gad_source=1&gclid=CjwKCAjwxNW2BhAkEiwA24Cm9A4mt9Do_Ga681a5H9ShirHD_tk2QVsXAPUipEU0wI90ettVI3FZ5hoC71sQAvD_BwE)). This higher mutation rate makes mtDNA particularly useful for investigating genetic relationships among closely related species and for examining genetic variability within species. Because mitochondrial genes evolve faster, they can reveal differences that might not be apparent in nuclear DNA, providing finer resolution in phylogenetic studies.
+
+```{r, echo=FALSE,fig.align='center'}
+knitr::include_graphics("C:/Users/paul_z_chen/Desktop/A220phylo/A220phylo/MamMT.jpg")
+```
+<div style="text-align: center;"> Fig 15. Organization of the mammalian mtDNA. The mammalian mitochondrial DNA (mtDNA) is a double-stranded circular molecule. The two strands are denoted the heavy (H) and the light (L) strands. The noncoding D-loop region contains the promoters for the H and L strands (HSP and LSP) as well as the origin of replication of the leading strand of mtDNA (OH). Transcription from HSP produces two rRNAs (12S and 16S rRNA), 10 mRNAs (the monocistronic ND1–3, ND5, Cyt b and COI–III mRNAs, and the biscistronic ND4/ND4L and ATP6/ATP8 mRNAS) and 14 tRNAs (F, V, L1, I, M, W, D, K, G, R, H, S1, L2 and T). Transcription from LSP produces one mRNA (ND6) and eight tRNAs (P, E, S2, Y, C, N, A and Q). Reproduced from [Larsson 2010](https://pubmed.ncbi.nlm.nih.gov/20350166/). <div>
+</br> 
+<div style="text-align: left;">
+
+Previous studies have utilised mtDNA to investigate phylogenetic relationships among primates, revealing insights into both the genetic relationships among species and the evolutionary history of various primate groups (Ferris et al. 1981; Hayasaka et al. 1986, 1988; Horai et al. 1986; Cann et al. 1987). These studies have shown that the phylogenetic relationships derived from mtDNA analyses are generally consistent with other forms of data, supporting the reliability of mtDNA for phylogenetic inference.
+
+To conduct our analysis, we began by collecting and aligning the ND4 and ND5 gene sequences from the species of interest.
+
+Here is how the first 19 of the aligned sequences of the respective six taxa looks like:
+```{r echo=FALSE}
+library(ape)
+library(phangorn)
+fdir <- system.file("extdata/trees", package = "phangorn")
+DNAchar <- read.dna(file.path(fdir, "primates.dna"), format = "interleaved")
+Tarsius <- DNAchar[4,]
+Hom <- DNAchar[10:14,]
+DNAchar <- as.matrix(rbind(Tarsius,Hom))
+colnames(DNAchar)<-paste("P",seq(1:232),sep="")
+char_matrix <- as.character(DNAchar)
+as.matrix(char_matrix[,1:19])
+```
+By comparing these sequences, we can construct a phylogenetic tree that illustrates the evolutionary relationships among Tarsius, Gibbons, and the hominids. This molecular approach helps us to trace lineage-specific variations and to understand how these species are related.
+
+Here is the resulting phylogenetic tree based on our molecular analysis:
+```{r echo=FALSE}
+library(ape)
+library(phangorn)
+fdir <- system.file("extdata/trees", package = "phangorn")
+DNAchar <- read.dna(file.path(fdir, "primates.dna"), format = "interleaved")
+Tarsius <- DNAchar[4,]
+Hom <- DNAchar[10:14,]
+DNAchar <- as.matrix(rbind(Tarsius,Hom))
+colnames(DNAchar)<-paste("P",seq(1:232),sep="")
+DNAchar <- phyDat(DNAchar,type="DNA")
+
+# F81 is the better model
+## To elucidate all maximum parsimony tree(s)
+bab_DNA <- bab(DNAchar)
+bab_DNA_cons <- root(consensus(bab_DNA), outgroup = "Tarsius",
+                    resolve.root = TRUE, edgelabel = TRUE)
+plot(bab_DNA_cons,edge.width = 2)
+```
