@@ -1,7 +1,7 @@
 ---
 title: "A220 Establishing Evolutionary Relationships"
 output: html_notebook
-    
+runtime: shiny
 ---
 
 # Introduction
@@ -444,12 +444,49 @@ The data used in this example is derived from the features of the (1.) cranium, 
 
 Let's examine the first 21 traits of the data:
 ``` {r echo=FALSE}
-pMor <- read.csv("C:/Users/paul_z_chen/Desktop/A220phylo/A220phylo/primateMorpho.csv")
+library(shiny)
+
+# Load data
+pMor <- read.csv("https://raw.githubusercontent.com/Tipsyrat/A220phylo/main/primateMorpho.csv")
 pMor <- as.data.frame(pMor)
 mor <- as.matrix(pMor[,-1])
-row.names(mor)<-as.vector(pMor[,1])
-(mor[,1:21])
+row.names(mor) <- as.vector(pMor[,1])
 
+# Shiny UI for selecting number of traits
+# Define the UI for the application
+ui <- fluidPage(
+    titlePanel("Examine Primate Traits"),
+    sidebarLayout(
+        sidebarPanel(
+            sliderInput("start_trait", 
+                        "Select starting trait:", 
+                        min = 1, 
+                        max = ncol(mor), 
+                        value = 1, 
+                        step = 1),
+            sliderInput("num_traits", 
+                        "Select number of traits to examine:", 
+                        min = 1, 
+                        max = ncol(mor), 
+                        value = 21, 
+                        step = 1)
+        ),
+        mainPanel(
+            tableOutput("traits_table")
+        )
+    )
+)
+# Shiny Server for rendering selected traits
+server <- function(input, output) {
+    output$traits_table <- renderTable({
+        start <- input$start_trait
+        end <- min(start + input$num_traits - 1, ncol(mor)) # Ensure we don't go beyond the number of columns
+        mor[, start:end, drop = FALSE]
+    })
+}
+
+# Run the Shiny app
+shinyApp(ui, server)
 ```
 Examine appendix 2, traits 1-264 of the manuscript (see appendix 3 for the corresponding coded matrix). What do the above codes represent? As mentioned earlier in segment 1.5, phenotypic traits are often categorised into discrete states. Such categories can suffer from subjectivity and loss of information, especially if the traits consists of continuous characteristics. The selection of traits can also be contentious, since only homologous traits should be considered.
 
@@ -458,7 +495,7 @@ For instance, the first trait, C1, represents the presence of the rostrum or muz
 
 
 ```{r, echo=FALSE,fig.align='center'}
-knitr::include_graphics("C:/Users/paul_z_chen/Desktop/A220phylo/A220phylo/pri_skull.jpg")
+knitr::include_graphics("pri_skull.jpg")
 ```
 <div style="text-align: center;"> Fig 12. Comparison of skull morphology between a typical prosimian and a typical simian <div>
 </br> 
@@ -469,7 +506,7 @@ As discussed in segment 1.5, phenotypic traits are often categorised into discre
 Furthermore, phenotypic traits are prone to convergence, where similar traits evolve independently in species with different evolutionary backgrounds. A classic example is the evolution of opposable digits. Although koalas are marsupials, they have developed opposable digits similar to those of primates, driven by the shared need for a strong grip in an arboreal environment. This selective pressure has led to the independent evolution of these traits in both groups (see Fig 13).
 
 ```{r, echo=FALSE,fig.align='center'}
-knitr::include_graphics("C:/Users/paul_z_chen/Desktop/A220phylo/A220phylo/convergence.jpg")
+knitr::include_graphics("convergence.jpg")
 ```
 <div style="text-align: center;"> Fig 13. Opposable digits of a Lemur (left) and a Koala (right) <div>
 </br> 
@@ -483,7 +520,9 @@ We begin by organising the morphological data into a matrix format, assigning sp
 Based on these traits, this is what the resulting consensus tree looks like:
 
 ```{r, echo=FALSE,fig.align='center'}
-pMor <- read.csv("C:/Users/paul_z_chen/Desktop/A220phylo/A220phylo/primateMorpho.csv")
+pMor <- read.csv("https://raw.githubusercontent.com/Tipsyrat/A220phylo/main/primateMorpho.csv")
+library(ape)
+library(phangorn)
 pMor <- as.data.frame(pMor)
 mor <- as.matrix(pMor[,-1])
 row.names(mor)<-as.vector(pMor[,1])
@@ -517,7 +556,7 @@ NADH dehydrogenase plays a key role in transferring electrons from NADH to ubiqu
 Mitochondrial DNA, including genes like ND4 and ND5, is often used in phylogenetic studies because it has a higher rate of nucleotide substitution than nuclear DNA ([Brown _et al_. 1979](https://www.pnas.org/doi/10.1073/pnas.76.4.1967?gad_source=1&gclid=CjwKCAjwxNW2BhAkEiwA24Cm9A4mt9Do_Ga681a5H9ShirHD_tk2QVsXAPUipEU0wI90ettVI3FZ5hoC71sQAvD_BwE)). This higher mutation rate makes mtDNA particularly useful for investigating genetic relationships among closely related species and for examining genetic variability within species. Because mitochondrial genes evolve faster, they can reveal differences that might not be apparent in nuclear DNA, providing finer resolution in phylogenetic studies.
 
 ```{r, echo=FALSE,fig.align='center'}
-knitr::include_graphics("C:/Users/paul_z_chen/Desktop/A220phylo/A220phylo/MamMT.jpg")
+knitr::include_graphics("MamMT.jpg")
 ```
 <div style="text-align: center;"> Fig 15. Organization of the mammalian mtDNA. The mammalian mitochondrial DNA (mtDNA) is a double-stranded circular molecule. The two strands are denoted the heavy (H) and the light (L) strands. The noncoding D-loop region contains the promoters for the H and L strands (HSP and LSP) as well as the origin of replication of the leading strand of mtDNA (OH). Transcription from HSP produces two rRNAs (12S and 16S rRNA), 10 mRNAs (the monocistronic ND1–3, ND5, Cyt b and COI–III mRNAs, and the biscistronic ND4/ND4L and ATP6/ATP8 mRNAS) and 14 tRNAs (F, V, L1, I, M, W, D, K, G, R, H, S1, L2 and T). Transcription from LSP produces one mRNA (ND6) and eight tRNAs (P, E, S2, Y, C, N, A and Q). Reproduced from [Larsson 2010](https://pubmed.ncbi.nlm.nih.gov/20350166/). <div>
 </br> 
@@ -557,7 +596,7 @@ DNAchar <- phyDat(DNAchar,type="DNA")
 # F81 is the better model
 ## To elucidate all maximum parsimony tree(s)
 bab_DNA <- bab(DNAchar)
-bab_DNA_cons <- root(consensus(bab_DNA), outgroup = "Tarsius",
+bab_DNA_cons <- root(consensus(bab_DNA), outgroup = "Tarsier",
                     resolve.root = TRUE, edgelabel = TRUE)
 plot(bab_DNA_cons,edge.width = 2)
 ```
